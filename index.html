@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biomedical Equipments for Clinical Applications Virtual Lab - ECG Augmented Leads</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.11/dist/interact.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+            color: #333;
+            overflow-x: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #007bff, #28a745);
+            padding: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        header p {
+            margin: 10px 0 0;
+            font-size: 1.2em;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        .section h2 {
+            color: #007bff;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 10px;
+        }
+        .pretest {
+            margin-bottom: 40px;
+        }
+        .pretest h2 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f8ff;
+            border-radius: 10px;
+        }
+        .question p {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option {
+            background: #e0f7fa;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .option:hover {
+            background: #b2ebf2;
+        }
+        .option.correct {
+            background: #4caf50;
+            color: white;
+        }
+        .option.incorrect {
+            background: #f44336;
+            color: white;
+        }
+        .lab {
+            display: none;
+        }
+        .lab.show {
+            display: block;
+        }
+        .human-body {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            margin: 20px auto;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8Y2lyY2xlIGN4PSI3NSIgY3k9IjUwIiByPSIyMCIgZmlsbD0iI2ZmZiIgLz4KICA8cmVjdCB4PSI1NSIgeT0iNzAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI4MCIgZmlsbD0iI2ZmZiIgLz4KICA8cmVjdCB4PSI2NSIgeT0iMTUwIiB3aWR0aD0iMjAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmZmIiAvPgogIDxyZWN0IHg9IjEwNSIgeT0iMTUwIiB3aWR0aD0iMjAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZmZmIiAvPgogIDxyZWN0IHg9IjY1IiB5PSIyNTAiIHdpZHRoPSIyMCIgaGVpZ2h0PSI4MCIgZmlsbD0iI2ZmZiIgLz4KICA8cmVjdCB4PSIxMDUiIHk9IjI1MCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZmZmIiAvPgogIDx0ZXh0IHg9IjE1MCIgeT0iMzUwIiBmaWxsPSIjMDAwIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5MYWJlbHM6IExBLCBSQSwgTEY8L3RleHQ+Cjwvc3ZnPg==') no-repeat center;
+            background-size: contain;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+        }
+        .lead {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #28a745;
+            border-radius: 50%;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .lead.dragging {
+            cursor: grabbing;
+        }
+        .drop-zone {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px dashed #007bff;
+            border-radius: 50%;
+            background: rgba(0, 123, 255, 0.1);
+        }
+        .drop-zone.ra { top: 40px; left: 50px; }
+        .drop-zone.la { top: 40px; right: 50px; }
+        .drop-zone.lf { bottom: 40px; left: 120px; }
+        .graphs {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .graph-container {
+            width: 30%;
+            height: 300px;
+            margin: 10px;
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+        .print-btn {
+            display: block;
+            margin: 10px auto;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .print-btn:hover {
+            background: #218838;
+        }
+        .info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f8ff;
+            border-radius: 10px;
+        }
+        .info h3 {
+            color: #007bff;
+        }
+        .start-lab {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .start-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background 0.3s;
+        }
+        .start-btn:hover {
+            background: #218838;
+        }
+        .video-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        iframe {
+            width: 100%;
+            max-width: 560px;
+            height: 315px;
+            border-radius: 10px;
+        }
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+            .container {
+                padding: 10px;
+            }
+            iframe {
+                height: 250px;
+            }
+            .graphs {
+                flex-direction: column;
+            }
+            .graph-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Department of Biomedical Engineering SRM KTR</h1>
+        <p>Biomedical Equipments for Clinical Applications Virtual Lab</p>
+    </header>
+    <div class="container">
+        <div class="pretest">
+            <h2>Pretest: ECG Augmented Leads Knowledge Check</h2>
+            <div class="question">
+                <p>1. What does aVR stand for in ECG leads?</p>
+                <div class="options">
+                    <div class="option" data-correct="false">Augmented Vector Right</div>
+                    <div class="option" data-correct="true">Augmented Voltage Right</div>
+                    <div class="option" data-correct="false">Augmented Vector Left</div>
+                    <div class="option" data-correct="false">Augmented Voltage Left</div>
+                </div>
+            </div>
+            <div class="question">
+                <p>2. Which lead is derived from the right arm electrode?</p>
+                <div class="options">
+                    <div class="option" data-correct="true">aVR</div>
+                    <div class="option" data-correct="false">aVL</div>
+                    <div class="option" data-correct="false">aVF</div>
+                    <div class="option" data-correct="false">Lead I</div>
+                </div>
+            </div>
+            <div class="question">
+                <p>3. In augmented leads, what is the amplification factor?</p>
+                <div class="options">
+                    <div class="option" data-correct="false">1</div>
+                    <div class="option" data-correct="false">2</div>
+                    <div class="option" data-correct="true">3</div>
+                    <div class="option" data-correct="false">4</div>
+                </div>
+            </div>
+            <div class="start-lab">
+                <button class="start-btn" id="startLabBtn">Start Virtual Lab</button>
+            </div>
+        </div>
+        <div class="lab" id="labSection">
+            <div class="section">
+                <h2>Aim</h2>
+                <p>To understand and simulate the augmented leads (aVR, aVL, aVF) in ECG monitoring, learn their derivation, and analyze normal ECG patterns through interactive virtual experimentation.</p>
+            </div>
+            <div class="section">
+                <h2>Theory</h2>
+                <p>Augmented leads are unipolar leads that provide a view of the heart's electrical activity from specific points. aVR is from the right arm, aVL from the left arm, and aVF from the left foot. They are derived by amplifying the voltage difference between the electrode and the average of the other two limb electrodes. The amplification factor is 3 for better visualization.</p>
+            </div>
+            <div class="section">
+                <h2>Procedure</h2>
+                <ol>
+                    <li>Complete the pretest to assess your knowledge.</li>
+                    <li>Click "Start Virtual Lab" to begin.</li>
+                    <li>Drag and place the ECG leads (RA, LA, LF) on the human body diagram.</li>
+                    <li>Observe the simulated ECG waveforms for aVR, aVL, and aVF in the graphs below.</li>
+                    <li>Note the characteristics in the Observations section.</li>
+                    <li>Use the Print Graph button to save or print the output.</li>
+                </ol>
+            </div>
+            <div class="section">
+                <h2>Demo Video: How to Connect ECG Leads</h2>
+                <div class="video-section">
+                    <iframe src="https://www.youtube.com/embed/VIDEO_ID_FOR_ECG_LEAD_CONNECTION" title="How to Connect ECG Leads" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <p>(Replace VIDEO_ID_FOR_ECG_LEAD_CONNECTION with the actual YouTube video ID for a tutorial on connecting ECG leads, e.g., a relevant educational video.)</p>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Simulation</h2>
+                <p>Drag the leads (RA: Right Arm, LA: Left Arm, LF: Left Foot) to their positions on the human body.</p>
+                <div class="human-body">
+                    <div class="drop-zone ra" data-zone="ra"></div>
+                    <div class="drop-zone la" data-zone="la"></div>
+                    <div class="drop-zone lf" data-zone="lf"></div>
+                    <div class="lead" id="lead-ra" data-lead="ra">RA</div>
+                    <div class="lead" id="lead-la" data-lead="la">LA</div>
+                    <div class="lead" id="lead-lf" data-lead="lf">LF</div>
+                </div>
+                <div class="graphs">
+                    <div class="graph-container">
+                        <canvas id="chart-aVR"></canvas>
+                        <h4>aVR</h4>
+                    </div>
+                    <div class="graph-container">
+                        <canvas id="chart-aVL"></canvas>
+                        <h4>aVL</h4>
+                    </div>
+                    <div class="graph-container">
+                        <canvas id="chart-aVF"></canvas>
+                        <h4>aVF</h4>
+                    </div>
+                </div>
+                <button class="print-btn" onclick="window.print()">Print Graphs</button>
+            </div>
+            <div class="section">
+                <h2>Observations</h2>
+                <p id="observations">Place the leads to generate observations. aVR: Negative QRS complex. aVL: Positive QRS. aVF: Positive QRS with inferior emphasis.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pretest logic
+        const options = document.querySelectorAll('.option');
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                const parent = option.parentElement;
+                const siblings = parent.querySelectorAll('.option');
+                siblings.forEach(sib => {
+                    sib.classList.remove('correct', 'incorrect');
+                });
+                if (option.dataset.correct === 'true') {
+                    option.classList.add('correct');
+                } else {
+                    option.classList.add('incorrect');
+                    siblings.forEach(sib => {
+                        if (sib.dataset.correct === 'true') {
+                            sib.classList.add('correct');
+                        }
+                    });
+                }
+            });
+        });
+
+        // Start Lab
+        document.getElementById('startLabBtn').addEventListener('click', () => {
+            document.querySelector('.pretest').style.display = 'none';
+            document.getElementById('labSection').classList.add('show');
+        });
+
+        // Drag and Drop for Leads
+        const leads = document.querySelectorAll('.lead');
+        const dropZones = document.querySelectorAll('.drop-zone');
+        let placedLeads = { ra: false, la: false, lf: false };
+
+        leads.forEach(lead => {
+            interact(lead).draggable({
+                onmove: dragMoveListener,
+                onend: (event) => {
+                    const target = event.target;
+                    const dropZone = document.elementFromPoint(event.clientX, event.clientY);
+                    if (dropZone && dropZone.classList.contains('drop-zone') && dropZone.dataset.zone === target.dataset.lead) {
+                        target.style.left = dropZone.offsetLeft + 'px';
+                        target.style.top = dropZone.offsetTop + 'px';
+                        placedLeads[target.dataset.lead] = true;
+                        checkAllPlaced();
+                    } else {
+                        // Reset position if not placed correctly
+                        target.style.left = '';
+                        target.style.top = '';
+                        placedLeads[target.dataset.lead] = false;
+                    }
+                }
+            });
+        });
+
+        function dragMoveListener(event) {
+            const target = event.target;
+            const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+            const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+            target.style.transform = `translate(${x}px, ${y}px)`;
+            target.setAttribute('data-x', x);
+            target.setAttribute('data-y', y);
+        }
+
+        function checkAllPlaced() {
+            if (placedLeads.ra && placedLeads.la && placedLeads.lf) {
+                updateAllCharts();
+            }
+        }
+
+        // ECG Simulation
+        const charts = {};
+        const leadsData = {
+            aVR: { data: generateECGData('aVR'), color: 'rgba(0, 123, 255, 1)' },
+            aVL: { data: generateECGData('aVL'), color: 'rgba(40, 167, 69, 1)' },
+            aVF: { data: generateECGData('aVF'), color: 'rgba(23, 162, 184, 1)' }
+        };
+
+        function generateECGData(lead) {
+            const data = [];
+            const length = 500;
+            for (let i = 0; i < length; i++) {
+                let value = 0;
+                if (i > 50 && i < 60) value = 0.1;
+                if (i > 80 && i < 90) value = -0.2;
+                if (i > 90 && i < 110) value = 1.5;
+                if (i > 110 && i < 120) value = -0.3;
+                if (i > 130 && i < 150) value = 0.2;
+                if (lead === 'aVR') value *= -1;
+                data.push(value);
+            }
+            return data;
+        }
+
+        function updateAllCharts() {
+            ['aVR', 'aVL', 'aVF'].forEach(lead => {
+                const ctx = document.getElementById

@@ -82,12 +82,12 @@
             background: #b2ebf2;
         }
         .option.correct {
-            background: #4caf50;
-            color: white;
+            background: #4caf50 !important;
+            color: white !important;
         }
         .option.incorrect {
-            background: #f44336;
-            color: white;
+            background: #f44336 !important;
+            color: white !important;
         }
         .simulation-content {
             display: none;
@@ -263,8 +263,7 @@
         <div class="section">
             <h2>Demo Video: How to Connect ECG Leads</h2>
             <div class="video-section">
-                <iframe src="https://www.youtube.com/embed/VIDEO_ID_FOR_ECG_LEAD_CONNECTION" title="How to Connect ECG Leads" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                <p>(Replace VIDEO_ID_FOR_ECG_LEAD_CONNECTION with the actual YouTube video ID for a tutorial on connecting ECG leads, e.g., a relevant educational video.)</p>
+                <iframe src="https://www.youtube.com/embed/kwLbSx9BNbU" title="How to Connect ECG Leads" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
         </div>
         <div class="section">
@@ -307,16 +306,16 @@
         // Pretest logic
         const options = document.querySelectorAll('.option');
         options.forEach(option => {
-            option.addEventListener('click', () => {
-                const parent = option.parentElement;
+            option.addEventListener('click', function() {
+                const parent = this.parentElement;
                 const siblings = parent.querySelectorAll('.option');
                 siblings.forEach(sib => {
                     sib.classList.remove('correct', 'incorrect');
                 });
-                if (option.dataset.correct === 'true') {
-                    option.classList.add('correct');
+                if (this.dataset.correct === 'true') {
+                    this.classList.add('correct');
                 } else {
-                    option.classList.add('incorrect');
+                    this.classList.add('incorrect');
                     // Highlight correct one
                     siblings.forEach(sib => {
                         if (sib.dataset.correct === 'true') {
@@ -328,7 +327,7 @@
         });
 
         // Start Simulation
-        document.getElementById('startSimBtn').addEventListener('click', () => {
+        document.getElementById('startSimBtn').addEventListener('click', function() {
             document.getElementById('simContent').classList.add('show');
         });
 
@@ -340,7 +339,7 @@
         leads.forEach(lead => {
             interact(lead).draggable({
                 onmove: dragMoveListener,
-                onend: (event) => {
+                onend: function(event) {
                     const target = event.target;
                     const dropZone = document.elementFromPoint(event.clientX, event.clientY);
                     if (dropZone && dropZone.classList.contains('drop-zone') && dropZone.dataset.zone === target.dataset.lead) {
@@ -404,4 +403,8 @@
                 charts[lead] = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: Array.from({length: leads
+                        labels: Array.from({length: leadsData[lead].data.length}, (_, i) => i),
+                        datasets: [{
+                            label: lead,
+                            data: leadsData[lead].data,
+                           

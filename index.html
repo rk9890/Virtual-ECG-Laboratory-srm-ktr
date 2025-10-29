@@ -133,18 +133,12 @@
         .drop-zone.ra { top: 40px; left: 50px; } /* Right Arm */
         .drop-zone.la { top: 40px; right: 50px; } /* Left Arm */
         .drop-zone.lf { bottom: 40px; left: 120px; } /* Left Foot */
-        .graphs {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-        }
         .graph-container {
-            width: 30%;
-            height: 300px;
-            margin: 10px;
+            height: 400px;
+            margin: 20px 0;
             background: white;
             border-radius: 10px;
-            padding: 10px;
+            padding: 20px;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
         }
         .print-btn {
@@ -195,12 +189,6 @@
             }
             iframe {
                 height: 250px;
-            }
-            .graphs {
-                flex-direction: column;
-            }
-            .graph-container {
-                width: 100%;
             }
         }
     </style>
@@ -255,7 +243,7 @@
                 <li>Complete the pretest to assess your knowledge.</li>
                 <li>Click "Start Simulation" to begin.</li>
                 <li>Drag and place the ECG leads (RA: Right Arm, LA: Left Arm, LF: Left Foot) on the human body diagram.</li>
-                <li>Observe the simulated ECG waveforms for aVR, aVL, and aVF in the graphs below.</li>
+                <li>Observe the simulated ECG waveform for the placed lead.</li>
                 <li>Note the characteristics in the Observations section.</li>
                 <li>Use the Print Graph button to save or print the output.</li>
             </ol>
@@ -279,26 +267,15 @@
                     <div class="lead" id="lead-la" data-lead="la">LA</div>
                     <div class="lead" id="lead-lf" data-lead="lf">LF</div>
                 </div>
-                <div class="graphs">
-                    <div class="graph-container">
-                        <canvas id="chart-aVR"></canvas>
-                        <h4>aVR</h4>
-                    </div>
-                    <div class="graph-container">
-                        <canvas id="chart-aVL"></canvas>
-                        <h4>aVL</h4>
-                    </div>
-                    <div class="graph-container">
-                        <canvas id="chart-aVF"></canvas>
-                        <h4>aVF</h4>
-                    </div>
+                <div class="graph-container">
+                    <canvas id="ecgChart"></canvas>
                 </div>
-                <button class="print-btn" onclick="window.print()">Print Graphs</button>
+                <button class="print-btn" onclick="window.print()">Print Graph</button>
             </div>
         </div>
         <div class="section">
             <h2>Observations</h2>
-            <p id="observations">Place the leads to generate observations. aVR: Negative QRS complex. aVL: Positive QRS. aVF: Positive QRS with inferior emphasis.</p>
+            <p id="observations">Place a lead to view observations. For aVR: Negative QRS complex. For aVL: Positive QRS. For aVF: Positive QRS with inferior emphasis.</p>
         </div>
     </div>
 
@@ -346,7 +323,7 @@
                         target.style.left = dropZone.offsetLeft + 'px';
                         target.style.top = dropZone.offsetTop + 'px';
                         placedLeads[target.dataset.lead] = true;
-                        checkAllPlaced();
+                        updateChartForLead(target.dataset.lead);
                     } else {
                         // Reset position if not placed correctly
                         target.style.left = '';
@@ -366,18 +343,31 @@
             target.setAttribute('data-y', y);
         }
 
-        function checkAllPlaced() {
-            if (placedLeads.ra && placedLeads.la && placedLeads.lf) {
-                updateAllCharts();
-            }
-        }
-
         // ECG Simulation
-        const charts = {};
+        const ctx = document.getElementById('ecgChart').getContext('2d');
+        let chart = null;
         const leadsData = {
-            aVR: { data: generateECGData('aVR'), color: 'rgba(0, 123, 255, 1)' },
-            aVL: { data: generateECGData('aVL'), color: 'rgba(40, 167, 69, 1)' },
-            aVF: { data: generateECGData('aVF'), color: 'rgba(23, 162, 184, 1)' }
+            ra: {
+                lead: 'aVR',
+                title: 'aVR: Augmented Voltage Right',
+                desc: 'This lead views the heart from the right shoulder. It shows a negative deflection in normal ECG.',
+                data: generateECGData('aVR'),
+                color: 'rgba(0, 123, 255, 1)' // Blue
+            },
+            la: {
+                lead: 'aVL',
+                title: 'aVL: Augmented Voltage Left',
+                desc: 'This lead views the heart from the left shoulder. It shows positive deflection in normal ECG.',
+                data: generateECGData('aVL'),
+                color: 'rgba(40, 167, 69, 1)' // Green
+            },
+            lf: {
+                lead: 'aVF',
+                title: 'aVF: Augmented Voltage Foot',
+                desc: 'This lead views the heart from the inferior aspect. It shows positive deflection in normal ECG.',
+                data: generateECGData('aVF'),
+                color: 'rgba(23, 162, 184, 1)' // Teal
+            }
         };
 
         function generateECGData(lead) {
@@ -396,15 +386,22 @@
             return data;
         }
 
-        function updateAllCharts() {
-            ['aVR', 'aVL', 'aVF'].forEach(lead => {
-                const ctx = document.getElementById(`chart-${lead}`).getContext('2d');
-                if (charts[lead]) charts[lead].destroy();
-                charts[lead] = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: Array.from({length: leadsData[lead].data.length}, (_, i) => i),
-                        datasets: [{
-                            label: lead,
-                            data: leadsData[lead].data,
-                           
+        function updateChartForLead(placedLead) {
+            const leadData = leadsData[placedLead];
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: leadData.data.length}, (_, i) => i),
+                    datasets: [{
+                        label: leadData.lead,
+                        data: leadData.data,
+                        borderColor: leadData.color,
+                        backgroundColor: 'rgba(0,0,0,0)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive:
